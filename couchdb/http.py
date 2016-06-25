@@ -181,7 +181,7 @@ class ResponseBody(object):
             chunk = self.resp.fp.read(chunksz)
 
             for ln in chunk.splitlines(True):
-                end = (ln == '\n') and not buffer # end of response
+                end = (ln == b'\n') and not buffer # end of response
 
                 if ln and not end:
                     if ln.endswith(b'\n'):
