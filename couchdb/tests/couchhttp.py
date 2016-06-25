@@ -64,7 +64,7 @@ class ResponseBodyTestCase(unittest.TestCase):
             def isclosed(self):
                 return len(self.fp.getvalue()) == self.fp.tell()
 
-        data = b'foobarbaz'
+        data = b'foobarbaz\n'
         data = b'\n'.join([hex(len(data))[2:].encode('utf-8'), data])
         response = http.ResponseBody(TestHttpResp(util.StringIO(data)),
                                      None, None, None)

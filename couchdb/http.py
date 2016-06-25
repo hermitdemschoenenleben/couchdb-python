@@ -168,6 +168,7 @@ class ResponseBody(object):
 
     def iterchunks(self):
         assert self.chunked
+        buffer = b''
         while True:
             if self.resp.isclosed():
                 break
@@ -178,8 +179,20 @@ class ResponseBody(object):
                 self._release_conn()
                 break
             chunk = self.resp.fp.read(chunksz)
-            for ln in chunk.splitlines():
-                yield ln
+
+            for ln in chunk.splitlines(True):
+                end = (ln == '\n') and not buffer # end of response
+
+                if ln and not end:
+                    if ln.endswith(b'\n'):
+                        # end of a document
+                        yield buffer + ln
+                        buffer = b''
+                    else:
+                        # a break inside a document --> add to buffer and reuse
+                        # later
+                        buffer += ln
+
             self.resp.fp.read(2) #crlf
 
 
@@ -349,7 +362,7 @@ class Session(object):
             if num_redirects > self.max_redirects:
                 raise RedirectLimit('Redirection limit exceeded')
             location = resp.getheader('location')
-            
+
             # in case of relative location: add scheme and host to the location
             location_split = util.urlsplit(location)
 
@@ -579,7 +592,7 @@ class Resource(object):
 def extract_credentials(url):
     """Extract authentication (user name and password) credentials from the
     given URL.
-    
+
     >>> extract_credentials('http://localhost:5984/_config/')
     ('http://localhost:5984/_config/', None)
     >>> extract_credentials('http://joe:secret@localhost:5984/_config/')
@@ -681,4 +694,3 @@ def urljoin(base, *path, **query):
         retval.extend(['?', urlencode(params)])
 
     return ''.join(retval)
-
